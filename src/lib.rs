@@ -1,3 +1,4 @@
+#[macro_use]
 mod utils;
 
 use std::fmt;
@@ -74,9 +75,9 @@ impl Universe {
 #[wasm_bindgen]
 impl Universe {
     pub fn new() -> Universe {
+        utils::set_panic_hook();
         let width = 64;
         let height = 64;
-
         let cells = (0..width * height)
             .map(|i| {
                 if i % 2 == 0 || i % 7 == 0 {
@@ -135,6 +136,14 @@ impl Universe {
                 let cell = self.cells[idx];
                 let live_neighbors = self.live_neighbor_count(row, col);
 
+                // log!(
+                //     "cell[{}, {}] is initially {:?} and has {} live neighbors",
+                //     row,
+                //     col,
+                //     cell,
+                //     live_neighbors
+                // );
+
                 let next_cell = match (cell, live_neighbors) {
                     // Rule 1: Any live cell with fewer than two live neighbours
                     // dies, as if caused by underpopulation.
@@ -151,6 +160,8 @@ impl Universe {
                     // All other cells remain in the same state.
                     (otherwise, _) => otherwise,
                 };
+
+                // log!("    it becomes {:?}", next_cell);
 
                 next[idx] = next_cell;
             }
