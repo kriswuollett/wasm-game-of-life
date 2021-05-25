@@ -4,14 +4,26 @@
     <meta charset="utf-8">
     <title>Hello wasm-pack!</title>
     <style>
-        body {
+        main {
             position: absolute;
-            top: 0;
-            left: 0;
+            top: 48px;
+            left: 48px;
             width: 100%;
             height: 100%;
             display: flex;
             flex-direction: column;
+            align-items: center;
+            justify-content: start;
+        }
+
+        nav {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 48px;
+            display: flex;
+            flex-direction: row;
             align-items: center;
             justify-content: center;
         }
@@ -19,7 +31,20 @@
 </head>
 <body>
 <noscript>This page contains webassembly and javascript content, please enable javascript in your browser.</noscript>
-<canvas id="game-of-life-canvas"></canvas>
+<nav>
+    <button id="play-pause"></button>
+    <button id="reset-random"></button>
+    <button id="reset-dead"></button>
+    Ticks per second: <input id="ticks-per-second"></input>
+</nav>
+<main>
+    <canvas id="game-of-life-canvas"></canvas>
+    <p>Controls:</p>
+    <ul>
+        <li>Shift-LeftClick: Pulsar</li>
+        <li>Alt-LeftClick: Glider</li>
+    </ul>
+</main>
 <script src="./bootstrap.js"></script>
 </body>
 </html>

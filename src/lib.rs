@@ -1,8 +1,12 @@
 #[macro_use]
 mod utils;
 
+use rand;
+
+use rand::Rng;
 use std::fmt;
 use wasm_bindgen::prelude::*;
+// use web_sys::console;
 
 // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
 // allocator.
@@ -27,6 +31,108 @@ pub enum Cell {
     Dead = 0,
     Alive = 1,
 }
+
+impl Cell {
+    fn toggle(&mut self) {
+        *self = match *self {
+            Cell::Dead => Cell::Alive,
+            Cell::Alive => Cell::Dead,
+        };
+    }
+}
+
+#[wasm_bindgen]
+#[repr(u8)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Pattern {
+    Glider = 0,
+    Pulsar = 1,
+    GosperGliderGun = 2,
+}
+
+impl Pattern {
+    fn cells(&self) -> Vec<(u32, u32)> {
+        (match self {
+            Pattern::Glider => GLIDER_CELL_PATTERN,
+            Pattern::Pulsar => PULSAR_CELL_PATTERN,
+            Pattern::GosperGliderGun => GOSPER_GLIDER_GUN,
+        })
+        .cells()
+    }
+}
+
+struct CellPattern<'a> {
+    cells: &'a str,
+}
+
+impl<'a> CellPattern<'a> {
+    fn cells(&self) -> Vec<(u32, u32)> {
+        let mut cells = Vec::new();
+        let mut x: u32 = 0;
+        let mut y: u32 = 0;
+
+        for c in self.cells.chars() {
+            // console::log_1(&format!("Got {}", c).into());
+            match c {
+                // O is an alive cell
+                'O' => {
+                    cells.push((x, y));
+                    y += 1;
+                }
+                // . is a dead cell
+                '.' => {
+                    y += 1;
+                }
+                // otherwise go to the next row
+                _ => {
+                    y = 0;
+                    x += 1;
+                }
+            }
+        }
+
+        return cells;
+    }
+}
+
+/// https://www.conwaylife.com/patterns/glider.cells
+const GLIDER_CELL_PATTERN: CellPattern = CellPattern {
+    cells: "\
+.O
+..O
+OOO",
+};
+
+/// https://www.conwaylife.com/patterns/pulsar.cells
+const PULSAR_CELL_PATTERN: CellPattern = CellPattern {
+    cells: "\
+..OOO...OOO
+
+O....O.O....O
+O....O.O....O
+O....O.O....O
+..OOO...OOO
+
+..OOO...OOO
+O....O.O....O
+O....O.O....O
+O....O.O....O
+
+..OOO...OOO",
+};
+
+const GOSPER_GLIDER_GUN: CellPattern = CellPattern {
+    cells: "\
+........................O
+......................O.O
+............OO......OO............OO
+...........O...O....OO............OO
+OO........O.....O...OO
+OO........O...O.OO....O.O
+..........O.....O.......O
+...........O...O
+............OO",
+};
 
 #[wasm_bindgen]
 pub struct Universe {
@@ -127,6 +233,26 @@ impl Universe {
         self.to_string()
     }
 
+    pub fn reset_random(&mut self) {
+        let rng = rand::thread_rng();
+        let dst = rand::distributions::Uniform::new_inclusive(0, 1);
+        self.cells = rng
+            .sample_iter(dst)
+            .take((self.width * self.height) as usize)
+            .map(|i| if i == 1 { Cell::Alive } else { Cell::Dead })
+            .collect();
+    }
+
+    pub fn clear(&mut self) {
+        for row in 0..self.height {
+            for col in 0..self.width {
+                let idx = self.get_index(row, col);
+                let cells: &mut Vec<Cell> = self.cells.as_mut();
+                cells[idx] = Cell::Dead;
+            }
+        }
+    }
+
     pub fn tick(&mut self) {
         let mut next = self.cells.clone();
 
@@ -168,6 +294,30 @@ impl Universe {
         }
 
         self.cells = next;
+    }
+
+    pub fn toggle_cell(&mut self, row: u32, column: u32) {
+        let idx = self.get_index(row, column);
+        self.cells[idx].toggle();
+    }
+
+    pub fn place_pattern(&mut self, row: u32, column: u32, pattern: Pattern) {
+        // console::log_1(&format!("Place pattern at  {}, {}", row, column).into());
+        for (delta_x, delta_y) in pattern.cells() {
+            let (x, y) = (
+                (row + delta_x) % self.height,
+                (column + delta_y) % self.width,
+            );
+            let idx = self.get_index(x, y);
+            // console::log_1(
+            //     &format!(
+            //         "Pacing cell at  {}, {} -> {}, {} index: {}",
+            //         delta_x, delta_y, x, y, idx
+            //     )
+            //     .into(),
+            // );
+            self.cells[idx] = Cell::Alive;
+        }
     }
 }
 

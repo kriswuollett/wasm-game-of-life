@@ -6,7 +6,7 @@ extern crate wasm_bindgen_test;
 use wasm_bindgen_test::*;
 
 extern crate wasm_game_of_life;
-use wasm_game_of_life::Universe;
+use wasm_game_of_life::{Pattern, Universe};
 
 wasm_bindgen_test_configure!(run_in_browser);
 
@@ -15,7 +15,7 @@ pub fn input_spaceship() -> Universe {
     let mut universe = Universe::new();
     universe.set_width(6);
     universe.set_height(6);
-    universe.set_cells(&[(1,2), (2,3), (3,1), (3,2), (3,3)]);
+    universe.set_cells(&[(1, 2), (2, 3), (3, 1), (3, 2), (3, 3)]);
     universe
 }
 
@@ -24,9 +24,35 @@ pub fn expected_spaceship() -> Universe {
     let mut universe = Universe::new();
     universe.set_width(6);
     universe.set_height(6);
-    universe.set_cells(&[(2,1), (2,3), (3,2), (3,3), (4,2)]);
+    universe.set_cells(&[(2, 1), (2, 3), (3, 2), (3, 3), (4, 2)]);
     universe
 }
+
+#[cfg(test)]
+pub fn expected_glider() -> Universe {
+    let mut universe = Universe::new();
+    universe.set_width(6);
+    universe.set_height(6);
+    universe.set_cells(&[(2, 1), (2, 3), (3, 2), (3, 3), (4, 2)]);
+    universe
+}
+
+#[wasm_bindgen_test]
+pub fn test_cell_pattern() {
+    let mut universe = Universe::new();
+    universe.set_width(6);
+    universe.set_height(6);
+    universe.place_pattern(0, 0, Pattern::Glider);
+
+    let mut expected_universe = Universe::new();
+    expected_universe.set_width(6);
+    expected_universe.set_height(6);
+    expected_universe.set_cells(&[(0, 1), (1, 2), (2, 0), (2, 1), (2, 2)]);
+
+    assert_eq!(&universe.get_cells(), &expected_universe.get_cells());
+}
+
+// TODO: add test_cell_pattern_wrap
 
 #[wasm_bindgen_test]
 pub fn test_tick() {
